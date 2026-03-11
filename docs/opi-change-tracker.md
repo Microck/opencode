@@ -121,6 +121,27 @@ The goal is simple: do not lose track of what was added, why it exists, where it
   - follow-up split out extra narrow skills for widgets, events, and tools so extension-system requests can route with less ambiguity
   - follow-up added `pi-to-opi` so prompts like "migrate this pi extension to opi" route to a dedicated migration workflow
 
+### 2026-03-11 - migrated pi-codex-usage extension to opi
+
+- status: completed
+- branch/worktree: `opi/extension-system`
+- summary: migrated `@calesennett/pi-codex-usage` npm package to opi extension format
+- key paths:
+  - `.opi/extensions/codex-usage.ts`
+  - `.opi/extensions/README-codex-usage.md`
+- notes:
+  - source: https://www.npmjs.com/package/@calesennett/pi-codex-usage
+  - shows Codex API usage (5h/7d windows) in opi footer/status bar
+  - mapped Pi events to opi events:
+    - `session_start` → `session.start`
+    - `turn_end` → `message.assistant`
+    - `session_shutdown` → `session.end`
+  - commands not yet available in opi - replaced with environment variables
+  - Pi's `ctx.ui.setStatus()` → opi's `opi.ui.setStatus()`
+  - Pi's settings persistence → not yet implemented in opi (uses env vars)
+  - model selection events not available in opi yet
+  - requires auth credentials from Pi's `~/.pi/agent/auth.json` (needs manual setup)
+
 ## Open questions
 
 - Should opi support only local `.ts` extensions first, or also package-based extensions from day one?
