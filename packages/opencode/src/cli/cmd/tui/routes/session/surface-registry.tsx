@@ -10,7 +10,6 @@ import { useKeybind } from "../../context/keybind"
 import { Flag } from "@/flag/flag"
 import { useDirectory } from "../../context/directory"
 import { useKV } from "../../context/kv"
-import { TodoItem } from "../../component/todo-item"
 import { Installation } from "@/installation"
 import { useSessionSurfaceLocal } from "./surface-local"
 import {
@@ -32,18 +31,7 @@ export const { use: useSessionSurface, provider: SessionSurfaceProvider } = crea
     const kv = useKV()
     const ext = useSessionSurfaceLocal()
     const session = createMemo(() => sync.session.get(route.sessionID))
-    const diff = createMemo(() => sync.data.session_diff[route.sessionID] ?? [])
-    const todo = createMemo(() => sync.data.todo[route.sessionID] ?? [])
     const msgs = createMemo(() => sync.data.message[route.sessionID] ?? [])
-    const mcp = createMemo(() => Object.entries(sync.data.mcp).sort(([a], [b]) => a.localeCompare(b)))
-    const mcpOk = createMemo(() => mcp().filter(([_, item]) => item.status === "connected").length)
-    const mcpErr = createMemo(
-      () =>
-        mcp().filter(
-          ([_, item]) =>
-            item.status === "failed" || item.status === "needs_auth" || item.status === "needs_client_registration",
-        ).length,
-    )
     const cost = createMemo(() => {
       const total = pipe(
         msgs(),
@@ -188,67 +176,6 @@ export const { use: useSessionSurface, provider: SessionSurfaceProvider } = crea
       )
     }
 
-    const SidebarMcp = () => {
-      const open = createSignal(true)
-
-      return (
-        <Show when={mcp().length > 0}>
-          <box>
-            <box flexDirection="row" gap={1} onMouseDown={() => mcp().length > 2 && open[1](!open[0]())}>
-              <Show when={mcp().length > 2}>
-                <text fg={theme.text}>{open[0]() ? "▼" : "▶"}</text>
-              </Show>
-              <text fg={theme.text}>
-                <b>MCP</b>
-                <Show when={!open[0]()}>
-                  <span style={{ fg: theme.textMuted }}>
-                    {" "}({mcpOk()} active
-                    {mcpErr() > 0 ? `, ${mcpErr()} error${mcpErr() > 1 ? "s" : ""}` : ""})
-                  </span>
-                </Show>
-              </text>
-            </box>
-            <Show when={mcp().length <= 2 || open[0]()}>
-              <For each={mcp()}>
-                {([key, item]) => (
-                  <box flexDirection="row" gap={1}>
-                    <text
-                      flexShrink={0}
-                      style={{
-                        fg: (
-                          {
-                            connected: theme.success,
-                            failed: theme.error,
-                            disabled: theme.textMuted,
-                            needs_auth: theme.warning,
-                            needs_client_registration: theme.error,
-                          } as Record<string, typeof theme.success>
-                        )[item.status],
-                      }}
-                    >
-                      •
-                    </text>
-                    <text fg={theme.text} wrapMode="word">
-                      {key}{" "}
-                      <span style={{ fg: theme.textMuted }}>
-                        <Switch fallback={item.status}>
-                          <Match when={item.status === "connected"}>Connected</Match>
-                          <Match when={item.status === "failed" && item}>{(val) => <i>{val().error}</i>}</Match>
-                          <Match when={item.status === "disabled"}>Disabled</Match>
-                          <Match when={(item.status as string) === "needs_auth"}>Needs auth</Match>
-                          <Match when={(item.status as string) === "needs_client_registration"}>Needs client ID</Match>
-                        </Switch>
-                      </span>
-                    </text>
-                  </box>
-                )}
-              </For>
-            </Show>
-          </box>
-        </Show>
-      )
-    }
-
     const SidebarLsp = () => {
       const open = createSignal(true)
 
@@ -290,66 +217,6 @@ export const { use: useSessionSurface, provider: SessionSurfaceProvider } = crea
             </For>
           </Show>
         </box>
-      )
-    }
-
-    const SidebarTodo = () => {
-      const open = createSignal(true)
-
-      return (
-        <Show when={todo().length > 0 && todo().some((item) => item.status !== "completed")}>
-          <box>
-            <box flexDirection="row" gap={1} onMouseDown={() => todo().length > 2 && open[1](!open[0]())}>
-              <Show when={todo().length > 2}>
-                <text fg={theme.text}>{open[0]() ? "▼" : "▶"}</text>
-              </Show>
-              <text fg={theme.text}>
-                <b>Todo</b>
-              </text>
-            </box>
-            <Show when={todo().length <= 2 || open[0]()}>
-              <For each={todo()}>{(item) => <TodoItem status={item.status} content={item.content} />}</For>
-            </Show>
-          </box>
-        </Show>
-      )
-    }
-
-    const SidebarDiff = () => {
-      const open = createSignal(true)
-
-      return (
-        <Show when={diff().length > 0}>
-          <box>
-            <box flexDirection="row" gap={1} onMouseDown={() => diff().length > 2 && open[1](!open[0]())}>
-              <Show when={diff().length > 2}>
-                <text fg={theme.text}>{open[0]() ? "▼" : "▶"}</text>
-              </Show>
-              <text fg={theme.text}>
-                <b>Modified Files</b>
-              </text>
-            </box>
-            <Show when={diff().length <= 2 || open[0]()}>
-              <For each={diff()}>
-                {(item) => (
-                  <box flexDirection="row" gap={1} justifyContent="space-between">
-                    <text fg={theme.textMuted} wrapMode="none">
-                      {item.file}
-                    </text>
-                    <box flexDirection="row" gap={1} flexShrink={0}>
-                      <Show when={item.additions}>
-                        <text fg={theme.diffAdded}>+{item.additions}</text>
-                      </Show>
-                      <Show when={item.deletions}>
-                        <text fg={theme.diffRemoved}>-{item.deletions}</text>
-                      </Show>
-                    </box>
-                  </box>
-                )}
-              </For>
-            </Show>
-          </box>
-        </Show>
       )
     }
 
@@ -433,28 +300,10 @@ export const { use: useSessionSurface, provider: SessionSurfaceProvider } = crea
         render: SidebarContext,
       },
       {
-        id: "core.sidebar-mcp",
-        slot: "session.sidebar.top",
-        order: 300,
-        render: SidebarMcp,
-      },
-      {
         id: "core.sidebar-lsp",
         slot: "session.sidebar.top",
         order: 400,
         render: SidebarLsp,
-      },
-      {
-        id: "core.sidebar-todo",
-        slot: "session.sidebar.top",
-        order: 500,
-        render: SidebarTodo,
-      },
-      {
-        id: "core.sidebar-diff",
-        slot: "session.sidebar.top",
-        order: 600,
-        render: SidebarDiff,
       },
       {
         id: "core.sidebar-getting-started",

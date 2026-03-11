@@ -5,6 +5,7 @@ export type SessionSlot =
   | "session.header.trailing"
   | "session.sidebar.top"
   | "session.sidebar.bottom"
+  | "session.status"
 
 export type SessionSurface = {
   id: string

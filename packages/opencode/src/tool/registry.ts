@@ -30,6 +30,7 @@ import { Truncate } from "./truncation"
 import { ApplyPatchTool } from "./apply_patch"
 import { Glob } from "../util/glob"
 import { pathToFileURL } from "url"
+import { Opi } from "@/opi"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
@@ -47,21 +48,21 @@ export namespace ToolRegistry {
       const namespace = path.basename(match, path.extname(match))
       const mod = await import(pathToFileURL(match).href)
       for (const [id, def] of Object.entries<ToolDefinition>(mod)) {
-        custom.push(fromPlugin(id === "default" ? namespace : `${namespace}_${id}`, def))
+        custom.push(fromDefinition(id === "default" ? namespace : `${namespace}_${id}`, def))
       }
     }
 
     const plugins = await Plugin.list()
     for (const plugin of plugins) {
       for (const [id, def] of Object.entries(plugin.tool ?? {})) {
-        custom.push(fromPlugin(id, def))
+        custom.push(fromDefinition(id, def))
       }
     }
 
     return { custom }
   })
 
-  function fromPlugin(id: string, def: ToolDefinition): Tool.Info {
+  function fromDefinition(id: string, def: ToolDefinition): Tool.Info {
     return {
       id,
       init: async (initCtx) => ({
@@ -97,10 +98,11 @@ export namespace ToolRegistry {
 
   async function all(): Promise<Tool.Info[]> {
     const custom = await state().then((x) => x.custom)
+    const ext = Opi.tools().map((item) => fromDefinition(item.id, item.def))
     const config = await Config.get()
     const question = ["app", "cli", "desktop"].includes(Flag.OPENCODE_CLIENT) || Flag.OPENCODE_ENABLE_QUESTION_TOOL
 
-    return [
+    const list = [
       InvalidTool,
       ...(question ? [QuestionTool] : []),
       BashTool,
@@ -121,7 +123,15 @@ export namespace ToolRegistry {
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
       ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool] : []),
       ...custom,
+      ...ext,
     ]
+
+    const map = new Map<string, Tool.Info>()
+    for (const item of list) {
+      if (map.has(item.id)) map.delete(item.id)
+      map.set(item.id, item)
+    }
+    return [...map.values()]
   }
 
   export async function ids() {

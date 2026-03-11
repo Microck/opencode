@@ -149,4 +149,53 @@ describe("session surface", () => {
 ]
 `)
   })
+
+  test("lets later ops hide and replace extension-provided surfaces", () => {
+    const extra: SessionContribution[] = [
+      {
+        type: "add",
+        surface: {
+          id: "core.sidebar-mcp",
+          slot: "session.sidebar.top",
+          order: 300,
+          render: empty,
+        },
+      },
+      {
+        type: "add",
+        surface: {
+          id: "core.sidebar-todo",
+          slot: "session.sidebar.top",
+          order: 500,
+          render: empty,
+        },
+      },
+      {
+        type: "hide",
+        id: "core.sidebar-mcp",
+      },
+      {
+        type: "replace",
+        id: "core.sidebar-todo",
+        surface: {
+          render: empty,
+          slot: "session.sidebar.bottom",
+          order: 50,
+        },
+      },
+    ]
+
+    const list = resolveSessionSurface([], extra)
+
+    expect(shape(selectSessionSurface(list, "session.sidebar.top"))).toMatchInlineSnapshot(`[]`)
+    expect(shape(selectSessionSurface(list, "session.sidebar.bottom"))).toMatchInlineSnapshot(`
+[
+  {
+    "id": "core.sidebar-todo",
+    "order": 50,
+    "slot": "session.sidebar.bottom",
+  },
+]
+`)
+  })
 })
