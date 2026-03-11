@@ -119,6 +119,7 @@ The goal is simple: do not lose track of what was added, why it exists, where it
   - skills live under `.opencode/skills/` so the repo auto-discovers them without extra config
   - `opi-pointer` is the broad routing skill and the rest are narrow area skills tied to current fork-specific file ownership
   - follow-up split out extra narrow skills for widgets, events, and tools so extension-system requests can route with less ambiguity
+  - follow-up added `pi-to-opi` so prompts like "migrate this pi extension to opi" route to a dedicated migration workflow
 
 ## Open questions
 

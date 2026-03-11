@@ -3,6 +3,7 @@
 These repo-local skills help OpenCode route opi-specific requests to the right files.
 
 - `opi-pointer` - first stop for generic opi requests; routes to the narrower skills
+- `pi-to-opi` - migrates Pi-style extensions or fork snippets into the opi extension system
 - `opi-header` - session header and header slots
 - `opi-footer` - footer/status bar and status-slot rendering
 - `opi-sidebar` - session sidebar layout, widgets, and migrated built-ins

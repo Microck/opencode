@@ -1,6 +1,6 @@
 ---
 name: opi-pointer
-description: Route opi-specific requests in the Microck fork to the correct area skill. Use whenever the user mentions opi, the fork, fork-only UI changes, repo-specific customization, or asks where a piece of opi behavior lives. This skill should be the first stop for broad opi requests before loading narrower skills like opi-header, opi-footer, opi-sidebar, opi-session-surface, opi-extensions, opi-widgets, opi-events, opi-tools, opi-theme, opi-branding, or opi-launcher-config.
+description: Route opi-specific requests in the Microck fork to the correct area skill. Use whenever the user mentions opi, the fork, fork-only UI changes, repo-specific customization, Pi-like migration, or asks where a piece of opi behavior lives. This skill should be the first stop for broad opi requests before loading narrower skills like pi-to-opi, opi-header, opi-footer, opi-sidebar, opi-session-surface, opi-extensions, opi-widgets, opi-events, opi-tools, opi-theme, opi-branding, or opi-launcher-config.
 ---
 
 # opi pointer
@@ -17,6 +17,7 @@ Use this skill to decide which narrower opi skill to load.
 
 | If the request is about... | Load this skill |
 | --- | --- |
+| migrating a Pi extension, Pi widget, Pi panel, or Pi customization into opi | `pi-to-opi` |
 | top session bar, header, title row, leading/trailing header content | `opi-header` |
 | footer, status line, bottom bar, status pills | `opi-footer` |
 | sidebar panels, right column layout, MCP/Todo/Modified Files | `opi-sidebar` |
