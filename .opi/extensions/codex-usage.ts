@@ -160,12 +160,9 @@ function parseUsageSnapshot(data: CodexUsageResponse, modelId: string | undefine
 
 // Fetch usage data
 async function requestUsageJson(): Promise<CodexUsageResponse> {
-  // Note: In a real implementation, you'd need to get auth credentials
-  // For now, this is a placeholder that would need auth setup
   const response = await fetch(USAGE_URL, {
     headers: {
       accept: "*/*",
-      // Authorization would need to be added here
     },
   })
 
@@ -225,12 +222,59 @@ function stopAutoRefresh(opi: any): void {
   opi.ui.setStatus(EXTENSION_ID, undefined)
 }
 
+// Command argument completions
+function getModeArgumentCompletions(argumentPrefix: string) {
+  const prefix = argumentPrefix.trim().toLowerCase()
+  const items = [
+    {
+      value: "left",
+      label: "left",
+      description: 'Shows: "Codex 5h:81% left 7d:64% left" (Spark model: "Codex Spark 5h:81% left 7d:64% left")',
+    },
+    {
+      value: "used",
+      label: "used",
+      description: 'Shows: "Codex 5h:19% used 7d:36% used" (Spark model: "Codex Spark 5h:19% used 7d:36% used")',
+    },
+    {
+      value: "toggle",
+      label: "toggle",
+      description: 'Flips between "... left" and "... used"',
+    },
+  ]
+
+  if (!prefix) return items
+  const filtered = items.filter((item) => item.value.startsWith(prefix))
+  return filtered.length > 0 ? filtered : null
+}
+
+function getResetWindowArgumentCompletions(argumentPrefix: string) {
+  const prefix = argumentPrefix.trim().toLowerCase()
+  const items = [
+    {
+      value: "5h",
+      label: "5h",
+      description: 'Shows reset countdown as "(5h:↺...)"',
+    },
+    {
+      value: "7d",
+      label: "7d",
+      description: 'Shows reset countdown as "(7d:↺...)"',
+    },
+    {
+      value: "toggle",
+      label: "toggle",
+      description: 'Flips reset countdown window between "5h" and "7d"',
+    },
+  ]
+
+  if (!prefix) return items
+  const filtered = items.filter((item) => item.value.startsWith(prefix))
+  return filtered.length > 0 ? filtered : null
+}
+
 // Export extension
 export default defineExtension((opi) => {
-  // Initialize settings from storage (simplified - in real implementation would read from file)
-  percentDisplayMode = "left"
-  resetWindowMode = "7d"
-
   // Session lifecycle events
   opi.on("session.start", ({ sessionID }) => {
     currentSessionID = sessionID
@@ -247,20 +291,68 @@ export default defineExtension((opi) => {
     currentSessionID = undefined
   })
 
-  // Note: opi doesn't have built-in commands like Pi
-  // The display mode and reset window mode would need to be:
-  // 1. Configured via environment variables
-  // 2. Added as tools that the user can call
-  // 3. Implemented via a config file that the extension reads
+  // Register commands
+  opi.registerCommand("codex-usage-mode", {
+    description: "Toggle Codex usage display mode, or set it explicitly: left | used | toggle",
+    getArgumentCompletions: getModeArgumentCompletions,
+    handler: async (args) => {
+      const token = args.trim().toLowerCase().split(/\s+/)[0] ?? ""
+      
+      if (!token || token === "toggle") {
+        percentDisplayMode = percentDisplayMode === "left" ? "used" : "left"
+      } else if (token === "left" || token === "used") {
+        percentDisplayMode = token as PercentDisplayMode
+      } else {
+        opi.ui.notify({
+          message: `Invalid mode: ${token}. Use "left", "used", or "toggle"`,
+          variant: "warning",
+        })
+        return
+      }
 
-  // For now, we'll use environment variables for configuration
-  const envMode = process.env.OPI_CODEX_USAGE_MODE as PercentDisplayMode
-  if (envMode === "left" || envMode === "used") {
-    percentDisplayMode = envMode
-  }
+      if (lastUsageSnapshot) {
+        const statusText = formatStatusText(lastUsageSnapshot, percentDisplayMode, resetWindowMode, undefined)
+        opi.ui.setStatus(EXTENSION_ID, statusText)
+      } else {
+        void updateStatus(opi)
+      }
 
-  const envWindow = process.env.OPI_CODEX_USAGE_WINDOW as ResetWindowMode
-  if (envWindow === "5h" || envWindow === "7d") {
-    resetWindowMode = envWindow
-  }
+      opi.ui.notify({
+        message: `Codex usage mode set to: ${percentDisplayMode}`,
+        variant: "success",
+      })
+    },
+  })
+
+  opi.registerCommand("codex-usage-reset-window", {
+    description: "Toggle reset countdown window, or set it explicitly: 5h | 7d | toggle",
+    getArgumentCompletions: getResetWindowArgumentCompletions,
+    handler: async (args) => {
+      const token = args.trim().toLowerCase().split(/\s+/)[0] ?? ""
+      
+      if (!token || token === "toggle") {
+        resetWindowMode = resetWindowMode === "7d" ? "5h" : "7d"
+      } else if (token === "5h" || token === "7d") {
+        resetWindowMode = token as ResetWindowMode
+      } else {
+        opi.ui.notify({
+          message: `Invalid window: ${token}. Use "5h", "7d", or "toggle"`,
+          variant: "warning",
+        })
+        return
+      }
+
+      if (lastUsageSnapshot) {
+        const statusText = formatStatusText(lastUsageSnapshot, percentDisplayMode, resetWindowMode, undefined)
+        opi.ui.setStatus(EXTENSION_ID, statusText)
+      } else {
+        void updateStatus(opi)
+      }
+
+      opi.ui.notify({
+        message: `Reset window set to: ${resetWindowMode}`,
+        variant: "success",
+      })
+    },
+  })
 })

@@ -136,11 +136,26 @@ The goal is simple: do not lose track of what was added, why it exists, where it
     - `session_start` → `session.start`
     - `turn_end` → `message.assistant`
     - `session_shutdown` → `session.end`
-  - commands not yet available in opi - replaced with environment variables
+  - Pi's command system → opi's new `registerCommand` API with tab completion
   - Pi's `ctx.ui.setStatus()` → opi's `opi.ui.setStatus()`
-  - Pi's settings persistence → not yet implemented in opi (uses env vars)
-  - model selection events not available in opi yet
   - requires auth credentials from Pi's `~/.pi/agent/auth.json` (needs manual setup)
+
+### 2026-03-11 - opi extension command system
+
+- status: completed
+- branch/worktree: `opi/extension-system`
+- summary: added interactive command system to opi extensions
+- key paths:
+  - `packages/opencode/src/opi/types.ts` - added `OpiCommand` type and `registerCommand` to API
+  - `packages/opencode/src/opi/runtime.ts` - added command registry and execution
+  - `packages/opencode/src/cli/cmd/tui/component/prompt/index.tsx` - intercept `/command` for opi extensions
+  - `packages/opencode/src/cli/cmd/tui/component/prompt/autocomplete.tsx` - tab completion for commands
+- notes:
+  - extensions can register commands with `opi.registerCommand(name, { description, handler, getArgumentCompletions })`
+  - users invoke commands with `/command-name args` syntax
+  - commands support tab completion via `getArgumentCompletions` callback
+  - opi commands take precedence over server commands
+  - first real usage in `codex-usage` extension with `/codex-usage-mode` and `/codex-usage-reset-window`
 
 ## Open questions
 

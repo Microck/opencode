@@ -4,22 +4,24 @@ This is the opi port of [`@calesennett/pi-codex-usage`](https://www.npmjs.com/pa
 
 ## What It Does
 
-Shows Codex (and Codex Spark) API usage in the opi footer/status bar:
+Shows Codex (and Codex Spark) API usage in the opi footer with auto-refresh every 60 seconds:
 - 5-hour window usage percentage
 - 7-day window usage percentage  
 - Reset countdown timer
 - Color-coded status based on remaining quota
 
-## Differences from Pi Version
+## Commands
 
-| Feature | Pi Version | opi Version |
+| Command | Arguments | Description |
 |---------|-----------|-------------|
-| **Display Mode** | `/codex-usage-mode` command | Environment variable `OPI_CODEX_USAGE_MODE` |
-| **Reset Window** | `/codex-usage-reset-window` command | Environment variable `OPI_CODEX_USAGE_WINDOW` |
-| **Settings Persistence** | `settings.json` file | Environment variables only |
-| **Commands** | Built-in command system | Not available (use env vars) |
-| **Auto-refresh** | Every 60 seconds | Every 60 seconds |
-| **Model Detection** | `model_select` event | Not implemented (defaults to standard Codex) |
+| `/codex-usage-mode` | `left`, `used`, or `toggle` | Change display mode |
+| `/codex-usage-reset-window` | `5h`, `7d`, or `toggle` | Change reset countdown window |
+
+### Tab Completion
+
+Both commands support tab completion for their arguments:
+- Type `/codex-usage-mode ` then press Tab to see options
+- Type `/codex-usage-reset-window ` then press Tab to see options
 
 ## Installation
 
@@ -35,22 +37,7 @@ cp codex-usage.ts ~/.config/opi-xdg/opencode/extensions/
 
 ## Configuration
 
-Set environment variables before running opi:
-
-```bash
-# Display mode: "left" (default) or "used"
-export OPI_CODEX_USAGE_MODE=left
-
-# Reset countdown window: "7d" (default) or "5h"
-export OPI_CODEX_USAGE_WINDOW=7d
-```
-
-Or add to your shell profile:
-
-```bash
-echo 'export OPI_CODEX_USAGE_MODE=left' >> ~/.bashrc
-echo 'export OPI_CODEX_USAGE_WINDOW=7d' >> ~/.bashrc
-```
+Commands are interactive - no environment variables needed! Just type the command and use tab completion.
 
 ## Authentication
 
@@ -100,13 +87,12 @@ Color coding:
 - Status formatting → Nearly identical
 - Percentage calculations → Unchanged
 - Color-coding logic → Adapted to use theme colors
+- Commands → Now using opi's `registerCommand` API with tab completion!
 
 ### What Changed
 
-1. **No Command System**: opi doesn't have Pi's command registration (`pi.registerCommand`). Configuration is via environment variables instead.
-
-2. **No Settings Persistence**: Pi has built-in settings management. opi extensions don't have this yet, so we use env vars.
-
+1. **Command System**: Pi's `pi.registerCommand()` → opi's `opi.registerCommand()` ✅ Now working!
+2. **Settings Persistence**: Not yet implemented (commands are stateful but don't persist)
 3. **Event Mapping**:
    - `session_start` → `session.start`
    - `turn_end` → `message.assistant`
@@ -120,21 +106,23 @@ Color coding:
    - `ctx.ui.setStatus(id, text)` → `opi.ui.setStatus(key, text)`
    - `ctx.ui.notify(text, type)` → `opi.ui.notify({ message, variant })`
 
+### What's New in opi
+
+- ✅ **Interactive Commands**: Full command support with `/command-name args` syntax
+- ✅ **Tab Completion**: Command arguments show completions when you press Tab
+- ✅ **Real-time Updates**: Commands immediately update the status display
+
 ### What's Missing
 
-- Interactive commands (`/codex-usage-mode`, `/codex-usage-reset-window`)
-- Settings persistence across sessions
-- Tab completion for commands
+- Settings persistence across sessions (commands work but don't save state)
 - Model-specific usage (requires `model_select` event equivalent)
 
 ### Future Improvements
 
 To achieve full parity with the Pi version:
 
-1. **Add Tool Registration**: opi supports `opi.registerTool()` - could expose mode/window switching as tools
-2. **Add Settings API**: opi could add a settings persistence API similar to Pi
-3. **Add Command API**: opi could add a command registration system
-4. **Model Detection**: opi would need to expose model selection events
+1. **Add Settings Persistence**: Save command state to a file
+2. **Add Model Detection**: opi would need to expose model selection events
 
 ## Files Changed
 
@@ -144,8 +132,12 @@ To achieve full parity with the Pi version:
 ## Testing
 
 1. Ensure you have auth credentials available
-2. Set environment variables if you want non-default modes
-3. Launch opi in a project with this extension
+2. Launch opi in a project with this extension
+3. Try commands:
+   - Type `/codex-usage-mode ` and press Tab to see completions
+   - Type `/codex-usage-mode left` to set mode
+   - Type `/codex-usage-mode toggle` to flip between modes
+   - Type `/codex-usage-reset-window ` and press Tab to see completions
 4. Look for the Codex status in the footer
 
 ## Troubleshooting
@@ -159,6 +151,11 @@ To achieve full parity with the Pi version:
 - Make sure the extension file is in the correct location
 - Check opi logs for loading errors
 - Verify `opi.extensions` is enabled
+
+**Commands not working**
+- Make sure you're typing the full command with `/` prefix
+- Check that the extension loaded without errors
+- Try `/help` to see available commands
 
 **Wrong model shown**
 - Spark model detection requires model selection events

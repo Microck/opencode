@@ -10,7 +10,7 @@ import { useTheme, selectedForeground } from "@tui/context/theme"
 import { SplitBorder } from "@tui/component/border"
 import { useCommandDialog } from "@tui/component/dialog-command"
 import { useTerminalDimensions } from "@opentui/solid"
-import { Locale } from "@/util/locale"
+import { Opi } from "@/opi"
 import type { PromptInfo } from "./history"
 import { useFrecency } from "./frecency"
 
@@ -354,7 +354,47 @@ export function Autocomplete(props: {
   })
 
   const commands = createMemo((): AutocompleteOption[] => {
+    const text = props.input().plainText
     const results: AutocompleteOption[] = [...command.slashes()]
+
+    // Check if we're completing arguments for an opi extension command
+    if (text.startsWith("/") && text.includes(" ")) {
+      const [cmdName, ...argsParts] = text.slice(1).split(" ")
+      const opiCmd = Opi.getCommand(cmdName)
+      if (opiCmd?.getArgumentCompletions) {
+        const argPrefix = argsParts.join(" ")
+        const completions = opiCmd.getArgumentCompletions(argPrefix)
+        if (completions) {
+          return completions.map((item) => ({
+            display: item.label,
+            value: item.value,
+            description: item.description,
+            onSelect: () => {
+              const newText = "/" + cmdName + " " + item.value
+              const cursor = props.input().logicalCursor
+              props.input().deleteRange(0, 0, cursor.row, cursor.col)
+              props.input().insertText(newText)
+              props.input().cursorOffset = Bun.stringWidth(newText)
+            },
+          }))
+        }
+      }
+    }
+
+    // Add opi extension commands
+    for (const [name, opiCommand] of Opi.commands()) {
+      results.push({
+        display: "/" + name,
+        description: opiCommand.description,
+        onSelect: () => {
+          const newText = "/" + name + " "
+          const cursor = props.input().logicalCursor
+          props.input().deleteRange(0, 0, cursor.row, cursor.col)
+          props.input().insertText(newText)
+          props.input().cursorOffset = Bun.stringWidth(newText)
+        },
+      })
+    }
 
     for (const serverCommand of sync.data.command) {
       if (serverCommand.source === "skill") continue

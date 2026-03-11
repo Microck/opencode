@@ -13,7 +13,7 @@ import { Log } from "@/util/log"
 import { Instance } from "@/project/instance"
 import { OpiLoader } from "./loader"
 import type { Component } from "solid-js"
-import type { OpiApi, OpiEvent, OpiEventHandler, OpiExtension, OpiExtensionModule, OpiLoaded, OpiMeta, OpiToolDefinition } from "./types"
+import type { OpiApi, OpiEvent, OpiEventHandler, OpiExtension, OpiExtensionModule, OpiLoaded, OpiMeta, OpiToolDefinition, OpiCommand } from "./types"
 
 type State = {
   phase: "init" | "ready"
@@ -21,6 +21,7 @@ type State = {
   live: Map<string, SessionContribution>
   loaded: OpiLoaded[]
   tools: Map<string, { id: string; def: OpiToolDefinition }>
+  commands: Map<string, OpiCommand>
   status: Map<string, string>
   widgets: Map<string, string[] | Component>
   handlers: Map<OpiEvent, Set<(input: any) => void | Promise<void>>>
@@ -78,6 +79,7 @@ function createState(): State {
     live: new Map(),
     loaded: [],
     tools: new Map(),
+    commands: new Map(),
     status: new Map(),
     widgets: new Map(),
     handlers: new Map(),
@@ -114,6 +116,9 @@ function api(state: State, ext: OpiMeta): OpiApi {
     },
     registerTool(id, tool) {
       state.tools.set(id, { id, def: tool })
+    },
+    registerCommand(name, command) {
+      state.commands.set(name, command)
     },
     ui: {
       addSurface(surface) {
@@ -244,6 +249,7 @@ function reset(state: State) {
   state.live.clear()
   state.loaded.length = 0
   state.tools.clear()
+  state.commands.clear()
   state.status.clear()
   state.widgets.clear()
   state.handlers.clear()
@@ -275,6 +281,22 @@ export namespace Opi {
 
   export function tools() {
     return [...state().tools.values()]
+  }
+
+  export function commands() {
+    return [...state().commands.entries()]
+  }
+
+  export function getCommand(name: string): OpiCommand | undefined {
+    return state().commands.get(name)
+  }
+
+  export async function executeCommand(name: string, args: string): Promise<void> {
+    const command = state().commands.get(name)
+    if (!command) {
+      throw new Error(`Command "${name}" not found`)
+    }
+    await command.handler(args)
   }
 
   export function status() {

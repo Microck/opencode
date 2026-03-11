@@ -9,6 +9,12 @@ export type OpiSurface = SessionSurface & {
   after?: string
 }
 
+export type OpiCommand = {
+  description: string
+  handler: (args: string) => void | Promise<void>
+  getArgumentCompletions?: (argumentPrefix: string) => Array<{ value: string; label: string; description: string }> | null
+}
+
 export interface OpiUI {
   addSurface(surface: OpiSurface): void
   moveSurface(
@@ -48,6 +54,7 @@ export interface OpiApi {
   ui: OpiUI
   on<Name extends OpiEvent>(name: Name, handler: OpiEventHandler<Name>): void
   registerTool(id: string, tool: OpiToolDefinition): void
+  registerCommand(name: string, command: OpiCommand): void
 }
 
 export type OpiExtension = (opi: OpiApi) => void | Promise<void>

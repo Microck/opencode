@@ -23,7 +23,7 @@ import { useExit } from "../../context/exit"
 import { Clipboard } from "../../util/clipboard"
 import type { FilePart } from "@opencode-ai/sdk/v2"
 import { TuiEvent } from "../../event"
-import { iife } from "@/util/iife"
+import { Opi } from "@/opi"
 import { Locale } from "@/util/locale"
 import { formatDuration } from "@/util/format"
 import { createColors, createFrames } from "../../ui/spinner.ts"
@@ -598,6 +598,23 @@ export function Prompt(props: PromptProps) {
         command: inputText,
       })
       setStore("mode", "normal")
+    } else if (
+      inputText.startsWith("/") &&
+      iife(() => {
+        const firstLine = inputText.split("\n")[0]
+        const command = firstLine.split(" ")[0].slice(1)
+        return Opi.getCommand(command) !== undefined
+      })
+    ) {
+      // Parse opi extension command from first line
+      const firstLineEnd = inputText.indexOf("\n")
+      const firstLine = firstLineEnd === -1 ? inputText : inputText.slice(0, firstLineEnd)
+      const [command, ...firstLineArgs] = firstLine.split(" ")
+      const restOfInput = firstLineEnd === -1 ? "" : inputText.slice(firstLineEnd + 1)
+      const args = firstLineArgs.join(" ") + (restOfInput ? "\n" + restOfInput : "")
+
+      // Execute opi extension command directly
+      void Opi.executeCommand(command.slice(1), args)
     } else if (
       inputText.startsWith("/") &&
       iife(() => {
