@@ -12,10 +12,12 @@ import { Log } from "@/util/log"
 import { ShareNext } from "@/share/share-next"
 import { Snapshot } from "../snapshot"
 import { Truncate } from "../tool/truncation"
+import { Opi } from "@/opi"
 
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
   await Plugin.init()
+  await Opi.init()
   ShareNext.init()
   Format.init()
   await LSP.init()
