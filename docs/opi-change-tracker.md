@@ -106,6 +106,20 @@ The goal is simple: do not lose track of what was added, why it exists, where it
   - follow-up readiness pass added missing example extensions, broader event and tool tests, and a docs walkthrough so the first milestone is ready to ship
   - verified on branch with `bun test test/opi/runtime.test.ts test/tool/registry.test.ts test/cli/tui/session-surface.test.ts` and `bun run typecheck` from `packages/opencode`
 
+### 2026-03-11 - opi repo-local routing skills
+
+- status: active in worktree
+- branch/worktree: `opi/extension-system`
+- summary: added repo-local opi skills so OpenCode can route header, footer, sidebar, surface, extension, theme, branding, and launcher requests to the right files
+- key paths:
+  - `.opencode/skills/`
+  - `.opencode/skills/opi-pointer/SKILL.md`
+  - `.opencode/skills/README.md`
+- notes:
+  - skills live under `.opencode/skills/` so the repo auto-discovers them without extra config
+  - `opi-pointer` is the broad routing skill and the rest are narrow area skills tied to current fork-specific file ownership
+  - follow-up split out extra narrow skills for widgets, events, and tools so extension-system requests can route with less ambiguity
+
 ## Open questions
 
 - Should opi support only local `.ts` extensions first, or also package-based extensions from day one?
